@@ -1,8 +1,11 @@
 import Fastify from 'fastify'
+import matchRouter from './routes/match.js'
 
 const fastify = Fastify({
   logger: true
 })
+
+fastify.register(matchRouter, { prefix: '/match' })
 
 fastify.get('/', async (request, reply) => {
   return { message: 'Hello from Fastify!' }
