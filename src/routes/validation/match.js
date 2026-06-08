@@ -1,7 +1,7 @@
 export const MATCH_STATUS = {
   SCHEDULED: 'scheduled',
   LIVE: 'live',
-  FINISHED: 'finished'
+  FINISHED: 'finished',
 };
 
 export const listMatchesQuerySchema = {
@@ -10,9 +10,9 @@ export const listMatchesQuerySchema = {
     limit: {
       type: 'integer',
       minimum: 1,
-      maximum: 100
-    }
-  }
+      maximum: 100,
+    },
+  },
 };
 
 export const matchIdParamSchema = {
@@ -21,9 +21,9 @@ export const matchIdParamSchema = {
   properties: {
     id: {
       type: 'integer',
-      minimum: 1
-    }
-  }
+      minimum: 1,
+    },
+  },
 };
 
 export const createMatchSchema = {
@@ -36,8 +36,8 @@ export const createMatchSchema = {
     startTime: { type: 'string', format: 'date-time' },
     endTime: { type: 'string', format: 'date-time' },
     homeScore: { type: 'integer', minimum: 0 },
-    awayScore: { type: 'integer', minimum: 0 }
-  }
+    awayScore: { type: 'integer', minimum: 0 },
+  },
 };
 
 export const updateScoreSchema = {
@@ -45,6 +45,6 @@ export const updateScoreSchema = {
   required: ['homeScore', 'awayScore'],
   properties: {
     homeScore: { type: 'integer', minimum: 0 },
-    awayScore: { type: 'integer', minimum: 0 }
-  }
+    awayScore: { type: 'integer', minimum: 0 },
+  },
 };

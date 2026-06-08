@@ -7,6 +7,8 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "test": "tap tests/*.test.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
@@ -25,6 +27,7 @@
     "@types/pg": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "drizzle-kit": "^0.31.10",
+    "prettier": "^3.8.3",
     "tap": "^21.7.4",
     "tsx": "^4.22.4"
   }
