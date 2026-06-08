@@ -1,30 +1,42 @@
-import { test } from 'tap';
+import { t } from 'tap';
 import Fastify from 'fastify';
-import matchRouter from '../src/routes/match.js';
 import ajvFormats from 'ajv-formats';
 
 async function buildApp() {
+  const matchServiceMock = {
+    getMatches: async (request, reply) => {
+      reply.send([]);
+    },
+    insertAMatch: async (request, reply) => {
+      reply.code(201).send([{ id: 1, ...request.body }]);
+    },
+  };
+
+  const matchRouterMock = await t.mockRequire('../src/routes/match.js', {
+    '../src/services/match-service.js': matchServiceMock,
+  });
+
   const fastify = Fastify({
     ajv: {
       customOptions: {
         coerceTypes: true, // As requested in previous issues for "coerced" integers
         allErrors: true,
       },
-      plugins: [ajvFormats]
-    }
+      plugins: [ajvFormats],
+    },
   });
-  await fastify.register(matchRouter);
+  await fastify.register(matchRouterMock.default);
   return fastify;
 }
 
-test('GET / (listMatchesQuerySchema)', async (t) => {
-  const app = await buildApp();
+const app = await buildApp();
 
+t.test('GET / (listMatchesQuerySchema)', async (t) => {
   t.test('should pass with valid limit', async (t) => {
     const res = await app.inject({
       method: 'GET',
       url: '/',
-      query: { limit: '10' }
+      query: { limit: '10' },
     });
     t.equal(res.statusCode, 200);
   });
@@ -33,7 +45,7 @@ test('GET / (listMatchesQuerySchema)', async (t) => {
     const res = await app.inject({
       method: 'GET',
       url: '/',
-      query: { limit: '101' }
+      query: { limit: '101' },
     });
     t.equal(res.statusCode, 400);
   });
@@ -42,7 +54,7 @@ test('GET / (listMatchesQuerySchema)', async (t) => {
     const res = await app.inject({
       method: 'GET',
       url: '/',
-      query: { limit: '0' }
+      query: { limit: '0' },
     });
     t.equal(res.statusCode, 400);
   });
@@ -50,15 +62,13 @@ test('GET / (listMatchesQuerySchema)', async (t) => {
   t.test('should pass with no limit (optional)', async (t) => {
     const res = await app.inject({
       method: 'GET',
-      url: '/'
+      url: '/',
     });
     t.equal(res.statusCode, 200);
   });
 });
 
-test('POST / (createMatchSchema)', async (t) => {
-  const app = await buildApp();
-
+t.test('POST / (createMatchSchema)', async (t) => {
   t.test('should pass with valid data', async (t) => {
     const res = await app.inject({
       method: 'POST',
@@ -70,10 +80,10 @@ test('POST / (createMatchSchema)', async (t) => {
         startTime: '2026-06-04T10:00:00Z',
         endTime: '2026-06-04T12:00:00Z',
         homeScore: '0',
-        awayScore: 0
-      }
+        awayScore: 0,
+      },
     });
-    t.equal(res.statusCode, 200);
+    t.equal(res.statusCode, 201);
   });
 
   t.test('should fail with missing required fields', async (t) => {
@@ -81,8 +91,8 @@ test('POST / (createMatchSchema)', async (t) => {
       method: 'POST',
       url: '/',
       payload: {
-        sport: 'Football'
-      }
+        sport: 'Football',
+      },
     });
     t.equal(res.statusCode, 400);
   });
@@ -96,8 +106,8 @@ test('POST / (createMatchSchema)', async (t) => {
         homeTeam: 'Team A',
         awayTeam: 'Team B',
         startTime: 'invalid-date',
-        endTime: '2026-06-04T12:00:00Z'
-      }
+        endTime: '2026-06-04T12:00:00Z',
+      },
     });
     t.equal(res.statusCode, 400);
   });
@@ -111,8 +121,8 @@ test('POST / (createMatchSchema)', async (t) => {
         homeTeam: 'Team A',
         awayTeam: 'Team B',
         startTime: '2026-06-04T12:00:00Z',
-        endTime: '2026-06-04T10:00:00Z'
-      }
+        endTime: '2026-06-04T10:00:00Z',
+      },
     });
     t.equal(res.statusCode, 400);
     const body = JSON.parse(res.payload);
@@ -128,24 +138,22 @@ test('POST / (createMatchSchema)', async (t) => {
         homeTeam: '',
         awayTeam: 'Team B',
         startTime: '2026-06-04T10:00:00Z',
-        endTime: '2026-06-04T12:00:00Z'
-      }
+        endTime: '2026-06-04T12:00:00Z',
+      },
     });
     t.equal(res.statusCode, 400);
   });
 });
 
-test('PATCH /:id/score (matchIdParamSchema & updateScoreSchema)', async (t) => {
-  const app = await buildApp();
-
+t.test('PATCH /:id/score (matchIdParamSchema & updateScoreSchema)', async (t) => {
   t.test('should pass with valid data', async (t) => {
     const res = await app.inject({
       method: 'PATCH',
       url: '/1/score',
       payload: {
         homeScore: 2,
-        awayScore: '1'
-      }
+        awayScore: '1',
+      },
     });
     t.equal(res.statusCode, 200);
   });
@@ -156,8 +164,8 @@ test('PATCH /:id/score (matchIdParamSchema & updateScoreSchema)', async (t) => {
       url: '/abc/score',
       payload: {
         homeScore: 1,
-        awayScore: 1
-      }
+        awayScore: 1,
+      },
     });
     t.equal(res.statusCode, 400);
   });
@@ -168,8 +176,8 @@ test('PATCH /:id/score (matchIdParamSchema & updateScoreSchema)', async (t) => {
       url: '/1/score',
       payload: {
         homeScore: -1,
-        awayScore: 1
-      }
+        awayScore: 1,
+      },
     });
     t.equal(res.statusCode, 400);
   });
@@ -179,8 +187,8 @@ test('PATCH /:id/score (matchIdParamSchema & updateScoreSchema)', async (t) => {
       method: 'PATCH',
       url: '/1/score',
       payload: {
-        homeScore: 1
-      }
+        homeScore: 1,
+      },
     });
     t.equal(res.statusCode, 400);
   });
