@@ -31,11 +31,9 @@ export const insertAMatch = async (request, reply) => {
       })
       .returning();
 
-    console.log({ event });
-
-    // if (reply.app.locals.broadcastCreated) {
-    //   reply.app.locals.broadcastMatchCreated(event);
-    // }
+    if (request.server.ws) {
+      request.server.ws.broadcastMatchCreated(event[0]);
+    }
 
     reply.code(201).send(event);
   } catch (error) {

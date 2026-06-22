@@ -7,6 +7,7 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "test": "tap tests/*.test.js",
+    "test:file": "tap",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
@@ -21,14 +22,22 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.8.5",
-    "pg": "^8.21.0"
+    "fastify-plugin": "^6.0.0",
+    "pg": "^8.21.0",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@types/pg": "^8.20.0",
     "ajv-formats": "^3.0.1",
-    "drizzle-kit": "^0.31.10",
+    "drizzle-kit": "^0.18.1",
     "prettier": "^3.8.3",
     "tap": "^21.7.4",
     "tsx": "^4.22.4"
+  },
+  "allowScripts": {
+    "es5-ext@0.10.64": true,
+    "esbuild@0.15.18": true,
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": true
   }
 }
