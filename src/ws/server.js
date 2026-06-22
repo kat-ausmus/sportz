@@ -32,12 +32,26 @@ async function webSocketServer(fastify) {
   fastify.server.on('upgrade', upgradeHandler);
 
   wss.on('connection', (socket) => {
+    socket.isAlive = true;
+    socket.on('pong', () => {
+      socket.isAlive = true;
+    });
+
     sendJson(socket, { type: 'welcome' });
     socket.on('error', (err) => fastify.log.error(err));
   });
 
+  const intervalTime = fastify.config?.WS_HEARTBEAT_INTERVAL || 30000;
+  const interval = setInterval(() => {
+    wss.clients.forEach((socket) => {
+      if (socket.isAlive === false) return socket.terminate();
+
+      socket.isAlive = false;
+      socket.ping();
+    });
+  }, intervalTime);
+
   const broadcastMatchCreated = (match) => {
-    console.log('****Broadcasting match created:', match);
     broadcast(wss, { type: 'match_created', data: match });
   };
 
@@ -46,6 +60,7 @@ async function webSocketServer(fastify) {
   });
 
   fastify.addHook('onClose', (instance, done) => {
+    clearInterval(interval);
     fastify.server.removeListener('upgrade', upgradeHandler);
     for (const client of wss.clients) {
       client.terminate();

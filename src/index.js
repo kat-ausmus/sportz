@@ -6,27 +6,38 @@ import { pool } from './db/db.js';
 const PORT = Number(process.env.PORT) || 8000;
 const HOST = process.env.HOST || '127.0.0.1';
 
-const fastify = Fastify({
-  logger: true,
-});
+export const createApp = (config = {}) => {
+  const fastify = Fastify({
+    logger: true,
+  });
 
-fastify.register(webSocketServer);
-fastify.register(matchRouter, { prefix: '/match' });
+  fastify.decorate('config', {
+    WS_HEARTBEAT_INTERVAL:
+      config.WS_HEARTBEAT_INTERVAL || Number(process.env.WS_HEARTBEAT_INTERVAL) || 30000,
+  });
 
-fastify.addHook('onClose', async () => {
-  await pool.end();
-});
+  fastify.register(webSocketServer);
+  fastify.register(matchRouter, { prefix: '/match' });
 
-fastify.get('/', async (_request, _reply) => {
-  return { message: 'Hello from Fastify Root!' };
-});
+  fastify.addHook('onClose', async () => {
+    if (pool.ending) return;
+    await pool.end();
+  });
 
-export const app = fastify;
+  fastify.get('/', async (_request, _reply) => {
+    return { message: 'Hello from Fastify Root!' };
+  });
+
+  return fastify;
+};
+
+export const app = createApp();
 
 export const start = async () => {
   try {
-    const address = await fastify.listen({ host: HOST, port: PORT });
+    const address = await app.listen({ host: HOST, port: PORT });
     console.log(`Application Server is running at ${address}`);
+
     const wsAddress = address.replace('http', 'ws');
     console.log(`Websocket server is running at ${wsAddress}/ws`);
   } catch (err) {

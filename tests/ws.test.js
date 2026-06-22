@@ -1,9 +1,10 @@
 import { t } from 'tap';
 import WebSocket from 'ws';
-import { app } from '../src/index.js';
+import { createApp } from '../src/index.js';
 import { db } from '../src/db/db.js';
 
 t.test('WebSocket client connection and welcome message', async (t) => {
+  const app = createApp();
   // Start the server on a random port
   await app.listen({ port: 0, host: '127.0.0.1' });
   const port = app.server.address().port;
@@ -92,4 +93,30 @@ t.test('WebSocket client connection and welcome message', async (t) => {
   await new Promise((resolve) => ws.on('close', resolve));
   await app.close();
   t.pass('WebSocket and server closed cleanly');
+});
+
+t.test('WebSocket heartbeat cleans up dead connections', async (t) => {
+  const app = createApp({ WS_HEARTBEAT_INTERVAL: 100 });
+
+  await app.listen({ port: 0, host: '127.0.0.1' });
+  const port = app.server.address().port;
+
+  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+
+  // Stub the pong method to simulate a dead client that doesn't respond to pings
+  ws.pong = () => {};
+
+  await new Promise((resolve) => ws.on('open', resolve));
+
+  const closePromise = new Promise((resolve) => ws.on('close', resolve));
+
+  // The first heartbeat (after 100ms) will set isAlive = false and send ping
+  // The second heartbeat (after 200ms) will see isAlive = false and terminate
+  // Wait a bit more than 200ms
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  await closePromise;
+  t.pass('Connection closed by heartbeat due to no pong');
+
+  await app.close();
 });
