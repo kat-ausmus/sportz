@@ -1,4 +1,5 @@
 import arcjet, { detectBot, shield, slidingWindow } from '@arcjet/fastify';
+import fp from 'fastify-plugin';
 
 const DRY_RUN = 'DRY_RUN';
 const LIVE = 'LIVE';
@@ -32,13 +33,14 @@ export const wsArcjet = arcjetKey
     })
   : null;
 
-export function securityPlugin(fastify) {
-  return async (request, reply) => {
+async function securityPlugin(fastify, _opts) {
+  fastify.addHook('onRequest', async (request, reply) => {
     if (!httpArcjet) return;
 
     try {
       const decision = await httpArcjet.protect(request);
-      fastify.log.info('Arcjet decision', decision);
+      fastify.log.info({ arcjetDecision: decision }, 'Arcjet decision');
+
       if (decision.isDenied()) {
         if (decision.reason.isRateLimit()) {
           return reply
@@ -49,7 +51,7 @@ export function securityPlugin(fastify) {
 
         if (decision.reason.isBot()) {
           return reply
-            .status(403)
+            .code(403)
             .header('Content-Type', 'application/json')
             .send({ message: 'No bots allowed' });
         }
@@ -62,7 +64,7 @@ export function securityPlugin(fastify) {
       fastify.log.error('ArcJet plugin error', err);
       return reply.code(503).send({ error: 'Service Unavailable' });
     }
-  };
+  });
 }
 
-export default securityPlugin;
+export default fp(securityPlugin);
