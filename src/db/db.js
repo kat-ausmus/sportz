@@ -7,8 +7,8 @@ if (!process.env.DATABASE_URL) {
 }
 
 const connectionString = process.env.DATABASE_URL.includes('?')
-  ? `${process.env.DATABASE_URL}&uselibpqcompat=true&sslmode=require`
-  : `${process.env.DATABASE_URL}?uselibpqcompat=true&sslmode=require`;
+  ? `${process.env.DATABASE_URL}`
+  : `${process.env.DATABASE_URL}`;
 
 export const pool = new pg.Pool({
   connectionString,

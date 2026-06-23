@@ -19,6 +19,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@arcjet/fastify": "^1.5.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.8.5",
@@ -29,7 +30,7 @@
   "devDependencies": {
     "@types/pg": "^8.20.0",
     "ajv-formats": "^3.0.1",
-    "drizzle-kit": "^0.18.1",
+    "drizzle-kit": "^0.31.10",
     "prettier": "^3.8.3",
     "tap": "^21.7.4",
     "tsx": "^4.22.4"

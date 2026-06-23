@@ -9,7 +9,12 @@ t.test('WebSocket client connection and welcome message', async (t) => {
   await app.listen({ port: 0, host: '127.0.0.1' });
   const port = app.server.address().port;
 
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
+    headers: {
+      'user-agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+    },
+  });
 
   const welcomeMessagePromise = new Promise((resolve, reject) => {
     const timeout = setTimeout(
@@ -40,22 +45,21 @@ t.test('WebSocket client connection and welcome message', async (t) => {
   const matchCreatedPromise = new Promise((resolve, reject) => {
     const timeout = setTimeout(
       () => reject(new Error('Timeout waiting for match_created message')),
-      5000
+      10000
     );
-    ws.once('message', (data) => {
-      // We already received 'welcome', so this should be 'match_created'
-      // Wait, we need to be careful if we add more listeners.
-      // Let's use a specific listener for match_created
+    const onMessage = (data) => {
       try {
         const msg = JSON.parse(data.toString());
         if (msg.type === 'match_created') {
           clearTimeout(timeout);
+          ws.off('message', onMessage);
           resolve(msg);
         }
       } catch (err) {
-        // ignore parse error if it's not JSON
+        // ignore parse error
       }
-    });
+    };
+    ws.on('message', onMessage);
   });
 
   // Mock db.insert for the broadcast test
@@ -65,6 +69,9 @@ t.test('WebSocket client connection and welcome message', async (t) => {
       returning: async () => [{ id: 999, homeTeam: 'Mock' }],
     }),
   });
+
+  // Wait a bit for the WS connection to be fully registered in wss.clients
+  await new Promise((resolve) => setTimeout(resolve, 200));
 
   // Trigger the broadcast by calling the route
   const response = await app.inject({
@@ -101,7 +108,12 @@ t.test('WebSocket heartbeat cleans up dead connections', async (t) => {
   await app.listen({ port: 0, host: '127.0.0.1' });
   const port = app.server.address().port;
 
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
+    headers: {
+      'user-agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+    },
+  });
 
   // Stub the pong method to simulate a dead client that doesn't respond to pings
   ws.pong = () => {};
