@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import matchRouter from './routes/match.js';
+import commentaryRouter from './routes/commentary.js';
 import webSocketServer from './ws/server.js';
 import securityPlugin from './arcjet.js';
 import { pool } from './db/db.js';
@@ -20,6 +21,7 @@ export const createApp = (config = {}) => {
   fastify.register(webSocketServer);
   fastify.register(securityPlugin);
   fastify.register(matchRouter, { prefix: '/match' });
+  fastify.register(commentaryRouter, { prefix: '/matches/:id/commentary' });
 
   fastify.addHook('onClose', async () => {
     if (pool.ending) return;
