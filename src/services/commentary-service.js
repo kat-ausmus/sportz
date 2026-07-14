@@ -14,7 +14,7 @@ export const getCommentaries = async (request, reply) => {
       .orderBy(desc(commentary.createdAt))
       .limit(limit);
 
-    reply.send(data);
+    reply.send({ data, num_records: data.length });
   } catch (error) {
     request.log.error(error, 'Failed to list commentaries.');
     reply.code(500).send({ error: 'Failed to list commentaries.' });
@@ -33,6 +33,14 @@ export const insertCommentary = async (request, reply) => {
         ...payload,
       })
       .returning();
+
+    if (reply.server.ws) {
+      try {
+        reply.server.ws.broadcastMatchCommentary(result[0].matchId, result[0]);
+      } catch (error) {
+        reply.log.error(error, 'Failed to broadcast commentary.');
+      }
+    }
 
     reply.code(201).send(result);
   } catch (error) {
