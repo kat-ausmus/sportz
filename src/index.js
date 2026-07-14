@@ -40,12 +40,12 @@ export const app = createApp();
 export const start = async () => {
   try {
     const address = await app.listen({ host: HOST, port: PORT });
-    console.log(`Application Server is running at ${address}`);
+    app.log.info(`Application Server is running at ${address}`);
 
     const wsAddress = address.replace('http', 'ws');
-    console.log(`Websocket server is running at ${wsAddress}/ws`);
+    app.log.info(`Websocket server is running at ${wsAddress}/ws`);
   } catch (err) {
-    fastify.log.error(err);
+    app.log.error(err);
     process.exit(1);
   }
 };

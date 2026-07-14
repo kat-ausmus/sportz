@@ -7,7 +7,7 @@ export const getMatches = async (request, reply) => {
   try {
     const limit = request.query.limit;
     const data = await db.select().from(matches).orderBy(desc(matches.createdAt)).limit(limit);
-    reply.send(data);
+    reply.send({ data, num_records: data.length });
   } catch (error) {
     request.log.error(error, 'Failed to list matches.');
     reply.code(500).send({ error: 'Failed to list matches.' });
@@ -18,7 +18,7 @@ export const insertAMatch = async (request, reply) => {
   try {
     const parsed = request.body;
     const { startTime, endTime, homeScore, awayScore } = parsed;
-    console.log({ startTime, endTime, homeScore, awayScore });
+    request.log({ startTime, endTime, homeScore, awayScore });
     const event = await db
       .insert(matches)
       .values({

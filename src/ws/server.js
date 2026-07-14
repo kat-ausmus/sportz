@@ -1,18 +1,41 @@
 import fp from 'fastify-plugin';
 import { WebSocket, WebSocketServer } from 'ws';
 import { wsArcjet } from '../arcjet.js';
+import { sendJson } from './services/socket_service.js';
+import {
+  broadcastToMatch,
+  cleanupSubscriptions,
+  subscribe,
+  unsubscribe,
+} from './services/subscription_service.js';
 
-function sendJson(socket, payload) {
-  if (socket.readyState !== WebSocket.OPEN) {
-    return;
-  }
-  socket.send(JSON.stringify(payload));
-}
-
-function broadcast(wss, payload) {
+function broadcastToAll(wss, payload) {
   for (const client of wss.clients) {
     if (client.readyState !== WebSocket.OPEN) continue;
     sendJson(client, payload);
+  }
+}
+
+function handleMessage(socket, data) {
+  let message;
+
+  try {
+    message = JSON.parse(data.toString());
+  } catch {
+    sendJson(socket, { type: 'error', message: 'Invalid JSON' });
+  }
+
+  if (message?.type === 'subscribe' && Number.isInteger(message.matchId)) {
+    subscribe(message.matchId, socket);
+    socket.subscriptions.add(message.matchId);
+    sendJson(socket, { type: 'subscribed', matchId: message.matchId });
+    return;
+  }
+
+  if (message?.type === 'unsubscribe' && Number.isInteger(message.matchId)) {
+    unsubscribe(message.matchId, socket);
+    socket.subscriptions.delete(message.matchId);
+    sendJson(socket, { type: 'unsubscribed', matchId: message.matchId });
   }
 }
 
@@ -67,7 +90,22 @@ async function webSocketServer(fastify) {
       socket.isAlive = true;
     });
 
+    socket.subscriptions = new Set();
+
     sendJson(socket, { type: 'welcome' });
+
+    socket.on('message', (data) => {
+      handleMessage(socket, data);
+    });
+
+    socket.on('error', () => {
+      socket.terminate();
+    });
+
+    socket.on('close', () => {
+      cleanupSubscriptions(socket);
+    });
+
     socket.on('error', (err) => fastify.log.error(err));
   });
 
@@ -82,11 +120,16 @@ async function webSocketServer(fastify) {
   }, intervalTime);
 
   const broadcastMatchCreated = (match) => {
-    broadcast(wss, { type: 'match_created', data: match });
+    broadcastToAll(wss, { type: 'match_created', data: match });
+  };
+
+  const broadcastMatchCommentary = (matchId, comment) => {
+    broadcastToMatch(matchId, { type: 'commentary', data: comment });
   };
 
   fastify.decorate('ws', {
     broadcastMatchCreated,
+    broadcastMatchCommentary,
   });
 
   fastify.addHook('onClose', (instance, done) => {
