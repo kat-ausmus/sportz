@@ -18,7 +18,7 @@ export const insertAMatch = async (request, reply) => {
   try {
     const parsed = request.body;
     const { startTime, endTime, homeScore, awayScore } = parsed;
-    request.log({ startTime, endTime, homeScore, awayScore });
+    request.log.info({ startTime, endTime, homeScore, awayScore });
     const event = await db
       .insert(matches)
       .values({
