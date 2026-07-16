@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
 import { WebSocket, WebSocketServer } from 'ws';
-import { wsArcjet } from '../arcjet.js';
+// import { wsArcjet } from '../arcjet.js';
 import { sendJson } from './services/socket_service.js';
 import {
   broadcastToMatch,
@@ -56,35 +56,35 @@ async function webSocketServer(fastify) {
   fastify.server.on('upgrade', upgradeHandler);
 
   wss.on('connection', async (socket, request) => {
-    if (wsArcjet) {
-      try {
-        // Construct a request-like object that @arcjet/fastify expects
-        const arcjetRequest = {
-          ...request,
-          socket: request.socket,
-          headers: request.headers,
-          method: request.method,
-          url: request.url,
-          protocol: 'http', // Default to http, will be overridden by URL parsing if host is present
-          server: fastify,
-        };
-
-        const decision = await wsArcjet.protect(arcjetRequest);
-        if (decision.isDenied()) {
-          const code = decision.reason.isRateLimit() ? 1013 : 1008;
-          const reason = decision.reason.isRateLimit() ? 'Too Many Requests' : 'Access Denied';
-          socket.close(code, reason);
-          return;
-        }
-        fastify.log.info(
-          `WebSocket connection established with IP: ${socket.remoteAddress}, User-Agent: ${socket.httpVersion}`
-        );
-      } catch (err) {
-        fastify.log.error('Exception occurred while validating websocket connection', err);
-        socket.close(1011, 'Server Security Error');
-        return;
-      }
-    }
+    // if (wsArcjet) {
+    //   try {
+    //     // Construct a request-like object that @arcjet/fastify expects
+    //     const arcjetRequest = {
+    //       ...request,
+    //       socket: request.socket,
+    //       headers: request.headers,
+    //       method: request.method,
+    //       url: request.url,
+    //       protocol: 'http', // Default to http, will be overridden by URL parsing if host is present
+    //       server: fastify,
+    //     };
+    //
+    //     const decision = await wsArcjet.protect(arcjetRequest);
+    //     if (decision.isDenied()) {
+    //       const code = decision.reason.isRateLimit() ? 1013 : 1008;
+    //       const reason = decision.reason.isRateLimit() ? 'Too Many Requests' : 'Access Denied';
+    //       socket.close(code, reason);
+    //       return;
+    //     }
+    //     fastify.log.info(
+    //       `WebSocket connection established with IP: ${socket.remoteAddress}, User-Agent: ${socket.httpVersion}`
+    //     );
+    //   } catch (err) {
+    //     fastify.log.error('Exception occurred while validating websocket connection', err);
+    //     socket.close(1011, 'Server Security Error');
+    //     return;
+    //   }
+    // }
     socket.isAlive = true;
     socket.on('pong', () => {
       socket.isAlive = true;

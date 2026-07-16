@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 import matchRouter from './routes/match.js';
 import commentaryRouter from './routes/commentary.js';
 import webSocketServer from './ws/server.js';
-import securityPlugin from './arcjet.js';
+// import securityPlugin from './arcjet.js';
 import { pool } from './db/db.js';
 
 const PORT = Number(process.env.PORT) || 8000;
@@ -19,7 +19,7 @@ export const createApp = (config = {}) => {
   });
 
   fastify.register(webSocketServer);
-  fastify.register(securityPlugin);
+  // fastify.register(securityPlugin);
   fastify.register(matchRouter, { prefix: '/match' });
   fastify.register(commentaryRouter, { prefix: '/matches/:id/commentary' });
 
@@ -51,5 +51,7 @@ export const start = async () => {
 };
 
 if (process.argv[1] === import.meta.filename || process.argv[1].endsWith('index.js')) {
-  start();
+  start().then(() => {
+    app.log.info('Server loaded!');
+  });
 }
