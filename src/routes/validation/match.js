@@ -1,3 +1,5 @@
+import { MAX_QUERY_LIMIT } from './constants.js';
+
 export const MATCH_STATUS = {
   SCHEDULED: 'scheduled',
   LIVE: 'live',
@@ -10,7 +12,7 @@ export const listMatchesQuerySchema = {
     limit: {
       type: 'integer',
       minimum: 1,
-      maximum: 100,
+      maximum: MAX_QUERY_LIMIT,
     },
   },
 };

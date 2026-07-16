@@ -1,6 +1,6 @@
 import { db } from '../db/db.js';
 import { matches } from '../db/schema.js';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { getMatchStatus } from '../utils/match-status.js';
 
 export const getMatches = async (request, reply) => {
@@ -39,5 +39,28 @@ export const insertAMatch = async (request, reply) => {
   } catch (error) {
     request.log.error(error, 'Failed to insert match.');
     reply.code(500).send({ error: 'Failed to insert a match.' });
+  }
+};
+
+export const updateScore = async (request, reply) => {
+  const { homeScore, awayScore } = request.body;
+  const matchId = request.params.id;
+  request.log.info({ matchId, homeScore, awayScore }, 'Entering update Score:');
+
+  try {
+    const [updated] = await db
+      .update(matches)
+      .set({ homeScore, awayScore })
+      .where(eq(matches.id, matchId))
+      .returning();
+
+    if (!updated) {
+      return reply.code(404).send({ error: 'Match not found' });
+    }
+
+    reply.code(200).send({ data: updated });
+  } catch (err) {
+    reply.log.error(err.message, 'Failed to update match score.');
+    reply.code(500).send({ error: 'Failed to update match score.', message: err.message });
   }
 };

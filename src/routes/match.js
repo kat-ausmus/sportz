@@ -35,16 +35,11 @@ export default async function matchRouter(fastify, _options) {
     },
   });
 
-  fastify.patch(
-    '/:id/score',
-    {
-      schema: {
-        params: matchIdParamSchema,
-        body: updateScoreSchema,
-      },
+  fastify.patch('/:id/score', {
+    schema: {
+      params: matchIdParamSchema,
+      body: updateScoreSchema,
     },
-    async (_request, _reply) => {
-      return { message: 'Score updated' };
-    }
-  );
+    handler: matchService.updateScore,
+  });
 }

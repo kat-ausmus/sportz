@@ -1,10 +1,12 @@
+import { MAX_QUERY_LIMIT } from './constants.js';
+
 export const listCommentaryQuerySchema = {
   type: 'object',
   properties: {
     limit: {
       type: 'number',
       minimum: 1,
-      maximum: 100,
+      maximum: MAX_QUERY_LIMIT,
     },
   },
 };
