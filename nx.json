@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "dev": {
+      "cache": false
+    },
+    "start": {
+      "cache": false
+    },
+    "preview": {
+      "cache": false
+    },
+    "build": {
+      "cache": true
+    }
+  },
+  "analytics": true
+}

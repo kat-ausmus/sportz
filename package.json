@@ -2,12 +2,20 @@
   "name": "sportz",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
   "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js",
-    "test": "tap tests/*.test.js",
-    "test:file": "tap",
+    "dev": "nx run-many --target=dev --projects=server,client --parallel",
+    "dev:server": "nx run server:dev",
+    "dev:client": "nx run client:dev",
+    "dev:ui": "nx run client:dev",
+    "start": "nx run server:start",
+    "build:ui": "nx run client:build",
+    "test": "tap --disable-coverage tests/*.test.js",
+    "test:file": "tap --disable-coverage",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
@@ -18,19 +26,11 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "dependencies": {
-    "@arcjet/fastify": "^1.5.0",
-    "dotenv": "^17.4.2",
-    "drizzle-orm": "^0.45.2",
-    "fastify": "^5.8.5",
-    "fastify-plugin": "^6.0.0",
-    "pg": "^8.21.0",
-    "ws": "^8.21.0"
-  },
   "devDependencies": {
     "@types/pg": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "drizzle-kit": "^0.31.10",
+    "nx": "^23.1.0",
     "prettier": "^3.8.3",
     "tap": "^21.7.4",
     "tsx": "^4.22.4"

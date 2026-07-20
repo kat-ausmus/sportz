@@ -50,7 +50,11 @@ export const start = async () => {
   }
 };
 
-if (process.argv[1] === import.meta.filename || process.argv[1].endsWith('index.js')) {
+const isDirectRun =
+  typeof process.argv[1] === 'string' &&
+  (process.argv[1] === import.meta.filename || process.argv[1].endsWith('index.js'));
+
+if (isDirectRun) {
   start().then(() => {
     app.log.info('Server loaded!');
   });

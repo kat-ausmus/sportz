@@ -3,17 +3,23 @@ import Fastify from 'fastify';
 import ajvFormats from 'ajv-formats';
 
 async function buildApp() {
+  const matchRouterPath = new URL('../server/src/routes/match.js', import.meta.url).pathname;
+  const matchServicePath = new URL('../server/src/services/match-service.js', import.meta.url).pathname;
+
   const matchServiceMock = {
     getMatches: async (request, reply) => {
-      reply.send([]);
+      reply.send({ data: [], num_records: 0 });
     },
     insertAMatch: async (request, reply) => {
       reply.code(201).send([{ id: 1, ...request.body }]);
     },
+    updateScore: async (request, reply) => {
+      reply.code(200).send({ data: { id: Number(request.params.id), ...request.body } });
+    },
   };
 
-  const matchRouterMock = await t.mockRequire('../src/routes/match.js', {
-    '../src/services/match-service.js': matchServiceMock,
+  const matchRouterMock = await t.mockRequire(matchRouterPath, {
+    [matchServicePath]: matchServiceMock,
   });
 
   const fastify = Fastify({
@@ -30,6 +36,14 @@ async function buildApp() {
 }
 
 const app = await buildApp();
+
+t.teardown(async () => {
+  try {
+    await app.close();
+  } catch {
+    // Ignore cleanup failures so validation assertions remain the signal.
+  }
+});
 
 t.test('GET / (listMatchesQuerySchema)', async (t) => {
   t.test('should pass with valid limit', async (t) => {
@@ -147,9 +161,23 @@ t.test('POST / (createMatchSchema)', async (t) => {
 
 t.test('PATCH /:id/score (matchIdParamSchema & updateScoreSchema)', async (t) => {
   t.test('should pass with valid data', async (t) => {
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/',
+      payload: {
+        sport: 'Football',
+        homeTeam: 'Team A',
+        awayTeam: 'Team B',
+        startTime: '2026-06-04T10:00:00Z',
+        endTime: '2026-06-04T12:00:00Z',
+      },
+    });
+
+    const createdMatch = JSON.parse(createResponse.payload)[0];
+
     const res = await app.inject({
       method: 'PATCH',
-      url: '/1/score',
+      url: `/${createdMatch.id}/score`,
       payload: {
         homeScore: 2,
         awayScore: '1',

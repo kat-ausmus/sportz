@@ -1,7 +1,7 @@
 import { t } from 'tap';
 import WebSocket from 'ws';
-import { createApp } from '../src/index.js';
-import { db } from '../src/db/db.js';
+import { createApp } from '../server/src/index.js';
+import { db } from '../server/src/db/db.js';
 
 t.test('WebSocket client connection and welcome message', async (t) => {
   const app = createApp();
