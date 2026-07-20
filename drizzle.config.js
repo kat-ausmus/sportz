@@ -10,7 +10,7 @@ const connectionString = process.env.DATABASE_URL.includes('?')
   : `${process.env.DATABASE_URL}?uselibpqcompat=true&sslmode=require`;
 
 export default defineConfig({
-  schema: './src/db/schema.js',
+  schema: './server/src/db/schema.js',
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {

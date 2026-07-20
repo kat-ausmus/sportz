@@ -1,5 +1,21 @@
-# Real time websockets example
+# Sportz
 
+Monorepo: Nx at the root, with the backend in `server/` and the UI in `client/`.
 
-Building the Backend of the Sportz application Using Fastify and Drizzle ORM
-and ArcJet for security and rate limiting
+Run both apps:
+
+```bash
+npm run dev
+```
+
+Run just the API:
+
+```bash
+npm run dev:server
+```
+
+Run just the UI:
+
+```bash
+npm run dev:client
+```

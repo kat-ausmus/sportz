@@ -1,0 +1,29 @@
+{
+  "name": "client",
+  "root": "client",
+  "sourceRoot": "client/src",
+  "projectType": "application",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "client",
+        "command": "npm run dev -- --host 127.0.0.1 --port 5173"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "client",
+        "command": "npm run build"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "client",
+        "command": "npm run preview -- --host 127.0.0.1 --port 4173"
+      }
+    }
+  }
+}

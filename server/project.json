@@ -1,0 +1,22 @@
+{
+  "name": "server",
+  "root": "server",
+  "sourceRoot": "server/src",
+  "projectType": "application",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "server",
+        "command": "node --watch src/index.js"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "server",
+        "command": "node src/index.js"
+      }
+    }
+  }
+}
