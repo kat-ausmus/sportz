@@ -14,7 +14,7 @@
     "dev:ui": "nx run client:dev",
     "start": "nx run server:start",
     "build:ui": "nx run client:build",
-    "test": "tap --disable-coverage tests/*.test.js",
+    "test": "tap tests/*.test.js",
     "test:file": "tap --disable-coverage",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
