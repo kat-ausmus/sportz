@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import { sendJson } from './socket_service.js';
+import { sendJson } from './socket-service.js';
 
 const matchSubscribers = new Map();
 
@@ -32,10 +32,9 @@ export function broadcastToMatch(matchId, payload) {
   const subscribers = matchSubscribers.get(matchId);
   if (!subscribers || subscribers.size === 0) return;
 
-  const message = JSON.stringify(payload);
   for (const socket of subscribers) {
     if (socket.readyState === WebSocket.OPEN) {
-      sendJson(socket, message);
+      sendJson(socket, payload);
     }
   }
 }

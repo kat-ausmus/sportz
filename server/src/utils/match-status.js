@@ -11,15 +11,14 @@ export function getMatchStatus(startTime, endTime, now = Date()) {
   return MATCH_STATUS.LIVE;
 }
 
-
-export async function syncMatchStatus( match, updateStatus  ) {
-const nextStatus = getMatchStatus(match.startTime, match.endTime);
-if (!nextStatus) {
+export async function syncMatchStatus(match, updateStatusFunction) {
+  const nextStatus = getMatchStatus(match.startTime, match.endTime);
+  if (!nextStatus) {
     return match.status;
-}
-if (match.status !== nextStatus) {
-    await updateStatus(nextStatus);
+  }
+  if (match.status !== nextStatus) {
+    await updateStatusFunction(nextStatus);
     match.status = nextStatus;
-}
-return match.status;
+  }
+  return match.status;
 }

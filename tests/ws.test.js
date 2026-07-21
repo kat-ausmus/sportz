@@ -1,79 +1,151 @@
 import { t } from 'tap';
-import WebSocket from 'ws';
-import { createApp } from '../server/src/index.js';
-import { db } from '../server/src/db/db.js';
 
-t.test('WebSocket client connection and welcome message', async (t) => {
-  const app = createApp();
-  // Start the server on a random port
-  await app.listen({ port: 0, host: '127.0.0.1' });
-  const port = app.server.address().port;
+const indexPath = new URL('../server/src/index.js', import.meta.url).pathname;
+const dbPath = new URL('../server/src/db/db.js', import.meta.url).pathname;
 
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
-    headers: {
-      'user-agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
-    },
-  });
+function createMockWsModule(state) {
+  class MockSocket {
+    constructor() {
+      this.readyState = MockWebSocket.OPEN;
+      this.isAlive = true;
+      this.subscriptions = new Set();
+      this.sent = [];
+      this.listeners = new Map();
+      this.terminated = false;
+      this.pingCount = 0;
+    }
 
-  const welcomeMessagePromise = new Promise((resolve, reject) => {
-    const timeout = setTimeout(
-      () => reject(new Error('Timeout waiting for welcome message')),
-      5000
-    );
-    ws.on('message', (data) => {
-      clearTimeout(timeout);
-      try {
-        const message = JSON.parse(data.toString());
-        resolve(message);
-      } catch (err) {
-        reject(err);
+    on(event, handler) {
+      const handlers = this.listeners.get(event) ?? [];
+      handlers.push(handler);
+      this.listeners.set(event, handlers);
+    }
+
+    emit(event, ...args) {
+      for (const handler of this.listeners.get(event) ?? []) {
+        handler(...args);
       }
-    });
-    ws.on('error', reject);
-  });
+    }
 
-  await new Promise((resolve, reject) => {
-    ws.on('open', resolve);
-    ws.on('error', reject);
-  });
+    send(payload) {
+      this.sent.push(payload);
+    }
 
-  const message = await welcomeMessagePromise;
-  t.same(message, { type: 'welcome' }, 'Should receive welcome message');
+    ping() {
+      this.pingCount += 1;
+    }
 
-  // Test broadcasting a match created event
-  const matchCreatedPromise = new Promise((resolve, reject) => {
-    const timeout = setTimeout(
-      () => reject(new Error('Timeout waiting for match_created message')),
-      10000
-    );
-    const onMessage = (data) => {
-      try {
-        const msg = JSON.parse(data.toString());
-        if (msg.type === 'match_created') {
-          clearTimeout(timeout);
-          ws.off('message', onMessage);
-          resolve(msg);
-        }
-      } catch (err) {
-        // ignore parse error
+    terminate() {
+      this.terminated = true;
+      this.readyState = 3;
+      this.emit('close');
+    }
+  }
+
+  class MockWebSocketServer {
+    constructor() {
+      this.clients = new Set();
+      this.listeners = new Map();
+      state.server = this;
+    }
+
+    on(event, handler) {
+      this.listeners.set(event, handler);
+    }
+
+    emit(event, ...args) {
+      const handler = this.listeners.get(event);
+      if (handler) {
+        handler(...args);
       }
-    };
-    ws.on('message', onMessage);
-  });
+    }
 
-  // Mock db.insert for the broadcast test
-  const originalInsert = db.insert;
-  db.insert = () => ({
-    values: () => ({
-      returning: async () => [{ id: 999, homeTeam: 'Mock' }],
+    handleUpgrade(_request, _socket, _head, callback) {
+      const socket = new MockSocket();
+      this.clients.add(socket);
+      state.socket = socket;
+      callback(socket);
+    }
+
+    close(callback) {
+      if (callback) callback();
+    }
+  }
+
+  class MockWebSocket {}
+  MockWebSocket.OPEN = 1;
+
+  return {
+    WebSocket: MockWebSocket,
+    WebSocketServer: MockWebSocketServer,
+  };
+}
+
+async function buildApp(t, overrides = {}) {
+  const state = {};
+  const mockDb = {
+    insert: () => ({
+      values: () => ({
+        returning: async () => [overrides.createdMatch ?? { id: 999, homeTeam: 'Mock' }],
+      }),
     }),
+    select: () => ({
+      from: () => ({
+        orderBy: () => ({
+          limit: async () => [],
+        }),
+        where: () => ({
+          limit: async () => [],
+        }),
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          returning: async () => [overrides.updatedMatch ?? { id: 1 }],
+        }),
+      }),
+    }),
+  };
+
+  const mockPool = {
+    ending: false,
+    end: async () => {},
+  };
+
+  const { createApp } = await t.mockImport(indexPath, {
+    [dbPath]: {
+      db: mockDb,
+      pool: mockPool,
+    },
+    ws: createMockWsModule(state),
   });
 
-  // Wait a bit for the WS connection to be fully registered in wss.clients
-  await new Promise((resolve) => setTimeout(resolve, 200));
+  const app = createApp({ WS_HEARTBEAT_INTERVAL: overrides.heartbeatInterval ?? 30000 });
+  await app.ready();
 
-  // Trigger the broadcast by calling the route
+  return { app, state };
+}
+
+t.test('WebSocket connection sends a welcome message and broadcasts match creation', async (t) => {
+  const { app, state } = await buildApp(t, { createdMatch: { id: 999, homeTeam: 'Mock' } });
+  t.teardown(() => app.close());
+
+  app.server.emit(
+    'upgrade',
+    {
+      url: '/ws',
+      headers: {
+        host: '127.0.0.1',
+      },
+    },
+    {},
+    Buffer.alloc(0)
+  );
+
+  t.ok(state.socket, 'socket should be created on upgrade');
+  t.same(JSON.parse(state.socket.sent[0]), { type: 'welcome' }, 'should send welcome message');
+
   const response = await app.inject({
     method: 'POST',
     url: '/match/',
@@ -86,49 +158,42 @@ t.test('WebSocket client connection and welcome message', async (t) => {
     },
   });
 
-  t.equal(response.statusCode, 201, 'Match should be created');
-
-  const matchCreatedMsg = await matchCreatedPromise;
-  t.equal(matchCreatedMsg.type, 'match_created', 'Should receive match_created message');
-  t.equal(matchCreatedMsg.data.id, 999, 'Broadcasted match ID should match');
-
-  // Restored original insert
-  db.insert = originalInsert;
-
-  // Close the connection and the server
-  ws.close();
-  await new Promise((resolve) => ws.on('close', resolve));
-  await app.close();
-  t.pass('WebSocket and server closed cleanly');
+  t.equal(response.statusCode, 201, 'match should be created');
+  t.same(
+    JSON.parse(state.socket.sent.at(-1)),
+    { type: 'match-created', data: { id: 999, homeTeam: 'Mock' } },
+    'should broadcast the created match'
+  );
 });
 
-t.test('WebSocket heartbeat cleans up dead connections', async (t) => {
-  const app = createApp({ WS_HEARTBEAT_INTERVAL: 100 });
+t.test('WebSocket heartbeat terminates dead connections', async (t) => {
+  const { app, state } = await buildApp(t, { heartbeatInterval: 50 });
+  t.teardown(() => app.close());
 
-  await app.listen({ port: 0, host: '127.0.0.1' });
-  const port = app.server.address().port;
-
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, {
-    headers: {
-      'user-agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36',
+  const socket = {
+    readyState: 1,
+    isAlive: false,
+    subscriptions: new Set(),
+    sent: [],
+    pingCount: 0,
+    terminated: false,
+    on() {},
+    send(payload) {
+      this.sent.push(payload);
     },
-  });
+    ping() {
+      this.pingCount += 1;
+    },
+    terminate() {
+      this.terminated = true;
+      this.readyState = 3;
+    },
+  };
 
-  // Stub the pong method to simulate a dead client that doesn't respond to pings
-  ws.pong = () => {};
+  state.server.clients.add(socket);
 
-  await new Promise((resolve) => ws.on('open', resolve));
+  await new Promise((resolve) => setTimeout(resolve, 150));
 
-  const closePromise = new Promise((resolve) => ws.on('close', resolve));
-
-  // The first heartbeat (after 100ms) will set isAlive = false and send ping
-  // The second heartbeat (after 200ms) will see isAlive = false and terminate
-  // Wait a bit more than 200ms
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  await closePromise;
-  t.pass('Connection closed by heartbeat due to no pong');
-
-  await app.close();
+  t.equal(socket.terminated, true, 'dead socket should be terminated');
+  t.equal(socket.pingCount, 0, 'dead socket should not be pinged again after termination');
 });

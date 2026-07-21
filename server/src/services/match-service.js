@@ -1,7 +1,8 @@
 import { db } from '../db/db.js';
 import { matches } from '../db/schema.js';
 import { desc, eq } from 'drizzle-orm';
-import { getMatchStatus } from '../utils/match-status.js';
+import { getMatchStatus, syncMatchStatus } from '../utils/match-status.js';
+import { MATCH_STATUS } from '../routes/validation/match.js';
 
 export const getMatches = async (request, reply) => {
   try {
@@ -48,14 +49,40 @@ export const updateScore = async (request, reply) => {
   request.log.info({ matchId, homeScore, awayScore }, 'Entering update Score:');
 
   try {
+    const [existing] = await db
+      .select({
+        id: matches.id,
+        status: matches.status,
+        startTime: matches.startTime,
+        endTime: matches.endTime,
+      })
+      .from(matches)
+      .where(eq(matches.id, matchId))
+      .limit(1);
+
+    if (!existing) {
+      return reply.code(404).send({ error: 'Match not found' });
+    }
+
+    await syncMatchStatus(existing, async (nextStatus) => {
+      await db.update(matches).set({ status: nextStatus }).where(eq(matches.id, matchId));
+    });
+
+    if (existing.status !== MATCH_STATUS.LIVE) {
+      return reply.code(409).send({ error: 'Match is not live' });
+    }
+
     const [updated] = await db
       .update(matches)
       .set({ homeScore, awayScore })
       .where(eq(matches.id, matchId))
       .returning();
 
-    if (!updated) {
-      return reply.code(404).send({ error: 'Match not found' });
+    if (request.server.ws) {
+      request.server.ws.broadcastScoreUpdated(matchId, {
+        homeScore,
+        awayScore,
+      });
     }
 
     reply.code(200).send({ data: updated });

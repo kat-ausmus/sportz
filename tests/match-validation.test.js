@@ -18,7 +18,7 @@ async function buildApp() {
     },
   };
 
-  const matchRouterMock = await t.mockRequire(matchRouterPath, {
+  const matchRouterMock = await t.mockImport(matchRouterPath, {
     [matchServicePath]: matchServiceMock,
   });
 
