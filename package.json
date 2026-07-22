@@ -8,7 +8,7 @@
     "client"
   ],
   "scripts": {
-    "dev": "nx run-many --target=dev --projects=server,client --parallel",
+    "dev": "nx run-many --target=dev --projects=server,client --parallel --no-tui",
     "dev:server": "nx run server:dev",
     "dev:client": "nx run client:dev",
     "dev:ui": "nx run client:dev",

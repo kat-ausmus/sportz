@@ -1,4 +1,4 @@
-import { Navigate, NavLink, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, NavLink, Outlet, Route, Routes, useNavigate } from 'react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { getCommentary, getMatches } from './lib/api.js';
 
@@ -61,7 +61,9 @@ function LoginPage({ onLogin }) {
       <div className="mx-auto flex min-h-screen max-w-md items-center px-6 py-10">
         <section className="w-full rounded-lg border border-zinc-800 bg-zinc-900 p-6 shadow-soft">
           <div className="mb-6">
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">Sportz</div>
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              Sportz
+            </div>
             <h1 className="mt-2 text-2xl font-semibold text-white">Sign in</h1>
           </div>
 
@@ -124,7 +126,9 @@ function DashboardLayout({ session, onLogout }) {
       <header className="border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
-            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400">Sportz</div>
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-400">
+              Sportz
+            </div>
             <div className="text-lg font-semibold text-white">Matches dashboard</div>
           </div>
           <div className="flex items-center gap-3">
@@ -155,7 +159,9 @@ function DashboardLayout({ session, onLogout }) {
               className={({ isActive }) =>
                 [
                   'block rounded-md px-3 py-2 text-sm transition',
-                  isActive ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-800 hover:text-white',
+                  isActive
+                    ? 'bg-zinc-800 text-white'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white',
                 ].join(' ')
               }
             >
@@ -343,7 +349,9 @@ function MatchesPage() {
           {loading ? (
             <div className="p-5 text-sm text-zinc-400">Loading matches...</div>
           ) : filteredMatches.length === 0 ? (
-            <div className="p-5 text-sm text-zinc-400">No matches found for the current filter.</div>
+            <div className="p-5 text-sm text-zinc-400">
+              No matches found for the current filter.
+            </div>
           ) : (
             <div className="divide-y divide-zinc-800">
               {filteredMatches.map((match) => (
@@ -353,11 +361,15 @@ function MatchesPage() {
                   onClick={() => setSelectedMatchId(match.id)}
                   className={[
                     'flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition',
-                    String(match.id) === String(selectedMatchId) ? 'bg-zinc-950/80' : 'hover:bg-zinc-950/60',
+                    String(match.id) === String(selectedMatchId)
+                      ? 'bg-zinc-950/80'
+                      : 'hover:bg-zinc-950/60',
                   ].join(' ')}
                 >
                   <div className="min-w-0">
-                    <div className="text-xs uppercase tracking-[0.2em] text-zinc-500">{match.sport}</div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                      {match.sport}
+                    </div>
                     <div className="mt-1 truncate text-base font-semibold text-white">
                       {match.homeTeam} vs {match.awayTeam}
                     </div>
@@ -397,7 +409,9 @@ function MatchesPage() {
           ) : (
             <div className="space-y-6 p-5">
               <div>
-                <div className="text-xs uppercase tracking-[0.2em] text-zinc-500">{selectedMatch.sport}</div>
+                <div className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                  {selectedMatch.sport}
+                </div>
                 <div className="mt-2 text-2xl font-semibold text-white">
                   {selectedMatch.homeTeam} vs {selectedMatch.awayTeam}
                 </div>
@@ -421,12 +435,16 @@ function MatchesPage() {
                 <div className="mt-3 flex items-end justify-between gap-4">
                   <div>
                     <div className="text-sm text-zinc-400">{selectedMatch.homeTeam}</div>
-                    <div className="text-4xl font-semibold text-white">{selectedMatch.homeScore ?? 0}</div>
+                    <div className="text-4xl font-semibold text-white">
+                      {selectedMatch.homeScore ?? 0}
+                    </div>
                   </div>
                   <div className="pb-2 text-sm text-zinc-500">vs</div>
                   <div className="text-right">
                     <div className="text-sm text-zinc-400">{selectedMatch.awayTeam}</div>
-                    <div className="text-4xl font-semibold text-white">{selectedMatch.awayScore ?? 0}</div>
+                    <div className="text-4xl font-semibold text-white">
+                      {selectedMatch.awayScore ?? 0}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -434,7 +452,9 @@ function MatchesPage() {
               <div>
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-semibold text-white">Recent commentary</div>
-                  {detailLoading ? <div className="text-xs text-zinc-500">Refreshing...</div> : null}
+                  {detailLoading ? (
+                    <div className="text-xs text-zinc-500">Refreshing...</div>
+                  ) : null}
                 </div>
                 <div className="mt-3 space-y-3">
                   {commentary.length === 0 ? (
@@ -443,7 +463,10 @@ function MatchesPage() {
                     </div>
                   ) : (
                     commentary.map((entry) => (
-                      <article key={entry.id} className="rounded-md border border-zinc-800 bg-zinc-950 p-4">
+                      <article
+                        key={entry.id}
+                        className="rounded-md border border-zinc-800 bg-zinc-950 p-4"
+                      >
                         <div className="flex items-center justify-between gap-4 text-xs text-zinc-500">
                           <span>
                             {entry.minute != null ? `Minute ${entry.minute}` : 'Live update'}
@@ -470,10 +493,21 @@ function AppShell() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to={session ? '/app/matches' : '/login'} replace />} />
-      <Route path="/login" element={session ? <Navigate to="/app/matches" replace /> : <LoginPage onLogin={setSession} />} />
+      <Route
+        path="/login"
+        element={
+          session ? <Navigate to="/app/matches" replace /> : <LoginPage onLogin={setSession} />
+        }
+      />
       <Route
         path="/app"
-        element={session ? <DashboardLayout session={session} onLogout={() => setSession(null)} /> : <Navigate to="/login" replace />}
+        element={
+          session ? (
+            <DashboardLayout session={session} onLogout={() => setSession(null)} />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       >
         <Route index element={<Navigate to="matches" replace />} />
         <Route path="matches" element={<MatchesPage />} />
